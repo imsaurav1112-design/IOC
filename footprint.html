@@ -872,27 +872,6 @@ const parseTime = (t) => {
         }
     } // <--- END OF renderCanvas
 
-    // 🟢 TEST BACKDOOR
-    window.testTick = function(price, isBuy, vol) {
-        const timeKey = "09:15"; 
-        if (!latestDataCache[timeKey]) {
-            latestDataCache[timeKey] = { 
-                open: price - 50, high: price + 50, low: price - 50, close: price, volumes: {} 
-            };
-        }
-        const pStr = price.toString();
-        if (!latestDataCache[timeKey].volumes[pStr]) {
-            latestDataCache[timeKey].volumes[pStr] = { buy_vol: 0, sell_vol: 0 };
-        }
-        if (isBuy) {
-            latestDataCache[timeKey].volumes[pStr].buy_vol += vol;
-        } else {
-            latestDataCache[timeKey].volumes[pStr].sell_vol += vol;
-        }
-        console.log(`Injected: ${isBuy ? 'BUY' : 'SELL'} ${vol} @ ${price}`);
-        processSessionData();
-        renderCanvas();
-    };
 
 </script>
 </body>
