@@ -319,21 +319,22 @@
         }
     });
 
-    // --- CHART CONFIGURATION ---
-    const COL_WIDTH = 180;      
+// --- CHART CONFIGURATION ---
+    let COL_WIDTH = 180;       // 🟢 Changed to 'let' for horizontal stretching
     const Y_AXIS_WIDTH = 60;   
     const VP_WIDTH = 120;      
-    const X_AXIS_HEIGHT = 80;  // 🟢 Increased slightly to fit total labels
-    const GAP = 15;             
-    const TICK_SIZE = 5;       
+    const X_AXIS_HEIGHT = 80;  
+    let GAP = 15;              // 🟢 Changed to 'let' 
+    const TICK_SIZE = 5;     
 
-    // --- CAMERA / INTERACTION STATE ---
+  // --- CAMERA / INTERACTION STATE ---
     let offsetX = 0; 
     let offsetY = 0; 
     let priceScale = 25; 
     
     let isDraggingChart = false;
-    let isDraggingScale = false;
+    let isDraggingYScale = false;
+    let isDraggingXScale = false;
     let lastMouseX = 0;
     let lastMouseY = 0;
     
@@ -349,28 +350,47 @@
     }
     window.addEventListener('resize', resizeCanvas); 
     
-    // Call resize once immediately, then again slightly delayed to ensure flexbox settled
     resizeCanvas();
     setTimeout(resizeCanvas, 100);
 
-    // 🟢 UNIFIED MOUSE & TOUCH HANDLERS FOR MOBILE DRAGGING
+    // 🟢 UPGRADED: TV-Style Axis Hit Detection
     function handlePointerDown(e) {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
         const rect = canvas.getBoundingClientRect();
         const x = clientX - rect.left;
+        const y = clientY - rect.top;
         
-        if (x > width - Y_AXIS_WIDTH) isDraggingScale = true;
-        else isDraggingChart = true;
+        if (x > width - Y_AXIS_WIDTH && y < height - X_AXIS_HEIGHT) {
+            isDraggingYScale = true;
+            document.body.style.cursor = 'ns-resize';
+        } else if (y > height - X_AXIS_HEIGHT && x < width - Y_AXIS_WIDTH) {
+            isDraggingXScale = true;
+            document.body.style.cursor = 'ew-resize';
+        } else {
+            isDraggingChart = true;
+            document.body.style.cursor = 'grabbing';
+        }
         
         lastMouseX = clientX;
         lastMouseY = clientY;
     }
 
     function handlePointerMove(e) {
-        if (!isDraggingChart && !isDraggingScale) return;
-        if (e.cancelable) e.preventDefault(); // Stop mobile scrolling
+        if (!isDraggingChart && !isDraggingYScale && !isDraggingXScale) {
+            // Hover cursors
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            
+            if (x > width - Y_AXIS_WIDTH && y < height - X_AXIS_HEIGHT) canvas.style.cursor = 'ns-resize';
+            else if (y > height - X_AXIS_HEIGHT && x < width - Y_AXIS_WIDTH) canvas.style.cursor = 'ew-resize';
+            else canvas.style.cursor = 'crosshair';
+            return;
+        }
+        
+        if (e.cancelable) e.preventDefault(); 
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -378,24 +398,46 @@
         const dx = clientX - lastMouseX;
         const dy = clientY - lastMouseY;
         
+        // 🟢 UPGRADED: Exponential Scaling Math
         if (isDraggingChart) {
             offsetX += dx;
             offsetY += dy;
-            renderCanvas();
-        } else if (isDraggingScale) {
-            priceScale -= dy * 0.2;
-            priceScale = Math.max(5, Math.min(priceScale, 100));
-            renderCanvas();
+        } else if (isDraggingYScale) {
+            // Dragging down stretches the Y axis
+            priceScale *= (1 - dy * 0.005);
+            priceScale = Math.max(2, Math.min(priceScale, 150));
+        } else if (isDraggingXScale) {
+            // Dragging right stretches the X axis
+            COL_WIDTH *= (1 + dx * 0.005);
+            COL_WIDTH = Math.max(40, Math.min(COL_WIDTH, 400));
+            GAP = COL_WIDTH * (15/180); // Maintain aspect ratio of the gap
         }
         
+        renderCanvas();
         lastMouseX = clientX;
         lastMouseY = clientY;
     }
 
     function handlePointerUp() { 
         isDraggingChart = false; 
-        isDraggingScale = false; 
+        isDraggingYScale = false; 
+        isDraggingXScale = false;
+        document.body.style.cursor = 'default';
+        canvas.style.cursor = 'crosshair';
     }
+
+    // Scroll Wheel Zoom Support (Bonus)
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = 1 - e.deltaY * 0.002;
+        if (e.ctrlKey || e.metaKey) {
+            COL_WIDTH = Math.max(40, Math.min(COL_WIDTH * zoomFactor, 400));
+            GAP = COL_WIDTH * (15/180);
+        } else {
+            priceScale = Math.max(2, Math.min(priceScale * zoomFactor, 150));
+        }
+        renderCanvas();
+    }, { passive: false });
 
     canvas.addEventListener('mousedown', handlePointerDown);
     window.addEventListener('mousemove', handlePointerMove, { passive: false });
@@ -406,7 +448,6 @@
     window.addEventListener('touchmove', handlePointerMove, { passive: false });
     window.addEventListener('touchend', handlePointerUp);
     window.addEventListener('touchcancel', handlePointerUp);
-
 
     // --- DATA POLLING ---
 let isLiveMode = true;
@@ -589,43 +630,36 @@ const parseTime = (t) => {
             maxPrice = 22100;
         }
 
-        const getPriceY = (price) => {
+const getPriceY = (price) => {
             const diffFromMin = price - minPrice;
             return height - X_AXIS_HEIGHT - 50 - (diffFromMin / TICK_SIZE * priceScale) + offsetY;
         };
         
-        // Draw Horizontal Grid
+        // 🟢 UPGRADED: Infinite Dynamic Grid & Scale Calculator
+        // Figure out what price represents the absolute top and bottom of the screen right now
+        const priceAtTop = minPrice + ((height - X_AXIS_HEIGHT - 50 + offsetY) / priceScale) * TICK_SIZE;
+        const priceAtBottom = minPrice + ((-50 + offsetY - height) / priceScale) * TICK_SIZE;
+        
+        const topBound = Math.max(priceAtTop, priceAtBottom);
+        const botBound = Math.min(priceAtTop, priceAtBottom);
+
+        // Adjust grid density based on how far we are zoomed out
+        let gridStep = TICK_SIZE;
+        if (priceScale < 8) gridStep = TICK_SIZE * 10;      // Zoomed out: Show every 50
+        else if (priceScale < 15) gridStep = TICK_SIZE * 4; // Medium: Show every 20
+        else if (priceScale < 30) gridStep = TICK_SIZE * 2; // Close: Show every 10
+
+        const startPrice = Math.floor(botBound / gridStep) * gridStep;
+        const endPrice = Math.ceil(topBound / gridStep) * gridStep;
+
+        // Draw Horizontal Grid Background
         ctx.strokeStyle = isLight ? '#e2e8f0' : '#1e1e24'; 
         ctx.lineWidth = 1; ctx.beginPath();
-        for (let p = Math.floor(minPrice - 50); p <= maxPrice + 50; p += TICK_SIZE) {
+        for (let p = startPrice; p <= endPrice; p += gridStep) {
             const y = getPriceY(p);
             if (y > 0 && y < height - X_AXIS_HEIGHT) { ctx.moveTo(0, y); ctx.lineTo(width - Y_AXIS_WIDTH, y); }
         }
         ctx.stroke();
-
-        let currentX = width - Y_AXIS_WIDTH - COL_WIDTH - GAP + offsetX;
-        let cumulativeDelta = 0;
-
-        for (let i = timeKeys.length - 1; i >= 0; i--) {
-            if (currentX + COL_WIDTH < (showVP ? VP_WIDTH : 0)) break; 
-            
-            const timeKey = timeKeys[i];
-            const candleData = latestDataCache[timeKey];
-            const matrix = candleData.volumes || {}; 
-            const prices = Object.keys(matrix).map(Number).sort((a,b) => b-a);
-            
-            let maxVol = 0, pocPrice = null, candleDelta = 0;
-            let totalBuyVol = 0, totalSellVol = 0; // 🟢 FIX: Track totals
-            
-            prices.forEach(p => {
-                const b = matrix[p].buy_vol, s = matrix[p].sell_vol;
-                candleDelta += (b - s);
-                totalBuyVol += b; // 🟢 Add to sum
-                totalSellVol += s; // 🟢 Add to sum
-                if (b+s > maxVol) { maxVol = b+s; pocPrice = p; }
-            });
-
-            cumulativeDelta += candleDelta;
 
             // DRAW OHLC CANDLESTICK
             const isBullish = candleData.close >= candleData.open;
@@ -809,19 +843,24 @@ const parseTime = (t) => {
             }
         }
 
-        // 🟢 Y-Axis Scale
+       // 🟢 UPGRADED: Infinite Y-Axis Rendering
         ctx.fillStyle = isLight ? '#f1f5f9' : '#09090b';
         ctx.fillRect(width - Y_AXIS_WIDTH, 0, Y_AXIS_WIDTH, height);
         ctx.strokeStyle = isLight ? '#cbd5e1' : '#27272a'; 
         ctx.beginPath(); ctx.moveTo(width - Y_AXIS_WIDTH, 0); ctx.lineTo(width - Y_AXIS_WIDTH, height); ctx.stroke();
 
         ctx.fillStyle = isLight ? '#0f172a' : '#f4f4f5'; 
-        ctx.font = "bold 11px 'JetBrains Mono'"; ctx.textAlign = "left";
-        for (let p = Math.floor(minPrice - 50); p <= maxPrice + 50; p += TICK_SIZE) {
+        ctx.font = "bold 11px 'JetBrains Mono'"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        
+        for (let p = startPrice; p <= endPrice; p += gridStep) {
             const y = getPriceY(p);
-            if (y > 0 && y < height - X_AXIS_HEIGHT) { ctx.fillText(p, width - Y_AXIS_WIDTH + 15, y); }
+            if (y > 0 && y < height - X_AXIS_HEIGHT) { 
+                // Draw a tiny tick mark
+                ctx.beginPath(); ctx.moveTo(width - Y_AXIS_WIDTH, y); ctx.lineTo(width - Y_AXIS_WIDTH + 4, y); ctx.stroke();
+                // Draw the label
+                ctx.fillText(p, width - Y_AXIS_WIDTH + 8, y); 
+            }
         }
-    }
 </script>
 </body>
 </html>
