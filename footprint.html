@@ -46,13 +46,30 @@
     .price-val { color: var(--text); }
     .price-val.fut { color: var(--gold); }
 
-    /* --- 2. WORKSPACE & LEFT NAV --- */
+/* --- 2. WORKSPACE & LEFT NAV --- */
     .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
     
     .left-nav {
-        width: 52px; background: var(--card); border-right: 1px solid var(--border); 
+        /* 🟢 CHANGED: Width is now dynamic via inline style, with fallback/min/max */
+        width: 52px; min-width: 52px; max-width: 250px;
+        background: var(--card); border-right: 1px solid var(--border); 
         display: flex; flex-direction: column; align-items: center; padding-top: 16px; gap: 12px; flex-shrink: 0; z-index: 20;
+        overflow-x: hidden; /* Prevent icons from spilling out if shrunk too much */
     }
+    
+    /* 🟢 NEW: The Draggable Resizer Bar */
+    .resizer-x {
+        width: 4px; /* The hit-area for the mouse */
+        background-color: transparent;
+        cursor: col-resize; /* The left-right arrow cursor */
+        position: relative;
+        z-index: 30;
+        transition: background-color 0.2s;
+    }
+    .resizer-x:hover, .resizer-x.is-resizing {
+        background-color: var(--accent); /* Glows blue when hovering or dragging */
+    }
+
     .tool-btn { 
         width: 36px; height: 36px; border-radius: 8px; background: transparent; border: 1px solid transparent; 
         color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; 
@@ -141,7 +158,7 @@
 </header>
 
 <div class="workspace">
-    <div class="left-nav">
+    <div class="left-nav" id="left-nav">
         <button class="tool-btn active" title="Cursor">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
         </button>
@@ -192,6 +209,47 @@
     const container = document.getElementById('chart-container');
     const ctx = canvas.getContext('2d');
     let width, height;
+
+// ==========================================
+    // 🟢 NEW: HORIZONTAL RESIZER LOGIC
+    // ==========================================
+    const resizer = document.getElementById('resizer');
+    const leftNav = document.getElementById('left-nav');
+    
+    let isResizingWorkspace = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizingWorkspace = true;
+        resizer.classList.add('is-resizing');
+        document.body.style.cursor = 'col-resize'; // Force the cursor everywhere while dragging
+        e.preventDefault(); // Prevent text highlighting while dragging
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isResizingWorkspace) return;
+        
+        // Calculate the new width based on the mouse X position
+        let newWidth = e.clientX;
+        
+        // Enforce the bounds (Min 52px, Max 250px)
+        if (newWidth < 52) newWidth = 52;
+        if (newWidth > 250) newWidth = 250;
+        
+        leftNav.style.width = `${newWidth}px`;
+        
+        // Immediately force the canvas to redraw to fill the new space
+        resizeCanvas();
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isResizingWorkspace) {
+            isResizingWorkspace = false;
+            resizer.classList.remove('is-resizing');
+            document.body.style.cursor = 'default';
+        }
+    });
+    // ==========================================
+    
 
     // --- TOGGLES STATE ---
     let showVP = true;
