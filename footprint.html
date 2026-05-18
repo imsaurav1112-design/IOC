@@ -49,12 +49,12 @@
 /* --- 2. WORKSPACE & LEFT NAV --- */
     .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
     
-    .left-nav {
-        /* 🟢 CHANGED: Width is now dynamic via inline style, with fallback/min/max */
+.left-nav {
+        /* 🟢 CHANGED: Removed overflow-x: hidden so the panel can escape the box! */
         width: 52px; min-width: 52px; max-width: 250px;
         background: var(--card); border-right: 1px solid var(--border); 
         display: flex; flex-direction: column; align-items: center; padding-top: 16px; gap: 12px; flex-shrink: 0; z-index: 20;
-        overflow-x: hidden; /* Prevent icons from spilling out if shrunk too much */
+        /* No overflow rules here! */
     }
     
     /* 🟢 NEW: The Draggable Resizer Bar */
