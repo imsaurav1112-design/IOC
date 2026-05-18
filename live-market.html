@@ -1598,16 +1598,20 @@ window.initTerminal = async function() {
             window.location.href = "index.html#pricing";
             return; 
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error("Profile check failed", e);
+    }
+    
     window.loadExpiries(); 
+    
+    // 🟢 THE FIX: 3-Second Interval
     setInterval(() => {
         const expiry = document.getElementById('sel-expiry').value;
         if (globalSym && expiry && expiry !== 'Loading...' && expiry !== 'Offline' && expiry !== 'Upstox Login Needed') {
             fetchUpstoxChain(true);
         }
-    }, 1000); 
-}; 
-
+    }, 3000); // 
+};
 </script>
 
 <script type="module">
