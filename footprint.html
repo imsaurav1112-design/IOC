@@ -862,15 +862,13 @@ const getPriceY = (price) => {
                 ctx.fillText(p, width - Y_AXIS_WIDTH + 8, y); 
             }
         }
-    }
+    } // <--- THIS BRACKET CLOSES renderCanvas()
 
     // 🟢 TEST BACKDOOR: Allows the console to inject fake trades
     window.testTick = function(price, isBuy, vol) {
-        // Force the fake data into a 09:15 candle
         const timeKey = "09:15"; 
         
         if (!latestDataCache[timeKey]) {
-            // Create a dummy candle if it doesn't exist
             latestDataCache[timeKey] = { 
                 open: price - 50, high: price + 50, low: price - 50, close: price, volumes: {} 
             };
@@ -888,11 +886,10 @@ const getPriceY = (price) => {
         }
 
         console.log(`Injected: ${isBuy ? 'BUY' : 'SELL'} ${vol} @ ${price}`);
-        
-        // Force the UI to recalculate and redraw
         processSessionData();
         renderCanvas();
     };
+
 </script>
 </body>
 </html>
