@@ -93,8 +93,8 @@
         <div class="sidebar-header"><span>GC</span> Admin</div>
         <div class="nav-item active" onclick="switchTab('tab-overview', this)">Overview</div>
         <div class="nav-item" onclick="switchTab('tab-users', this)">User Management</div>
-        
-        <div class="nav-item" onclick="switchTab('tab-history', this)">Historical Data</div>
+        <div class="nav-item" onclick="switchTab('tab-history', this)">Options History</div>
+        <div class="nav-item" onclick="switchTab('tab-footprint', this)">Footprint History</div>
         
         <div class="nav-item logout-nav" onclick="window.logoutFirebase()">Log Out Securely</div>
     </div>
@@ -153,6 +153,25 @@
                 </table>
             </div>
         </div>
+
+        <div id="tab-footprint" class="tab-pane">
+            <h1 class="header-title">Footprint Data Manager</h1>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Instrument</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="footprint-table-body">
+                        <tr><td colspan="3" style="text-align:center; color:var(--muted);">Loading footprint history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
     </div>
 </div>
 
@@ -316,6 +335,30 @@ window.handleGoogleLogin = async function() {
                   `).join('');
               }
           }
+        // ==========================================
+          // 3. FETCH FOOTPRINT SUMMARY
+          // ==========================================
+          const footRes = await fetch('https://api.greekcalculator.in/api/admin/footprint-summary', { headers });
+          if (footRes.ok) {
+              const footData = await footRes.json();
+              const tbody = document.getElementById('footprint-table-body');
+              
+              if (!footData.history || footData.history.length === 0) {
+                  tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--muted);">No footprint data recorded yet.</td></tr>`;
+              } else {
+                  tbody.innerHTML = footData.history.map(h => `
+                      <tr>
+                          <td style="font-family:'Ubuntu Mono'; color:var(--accent); font-weight:700;">${h.date}</td>
+                          <td style="font-weight:600;">NIFTY 50</td>
+                          <td>
+                              <button class="action-btn" onclick="downloadFootprint('${h.date}')" style="color:var(--green); border-color:var(--green);">Download JSON</button>
+                              <button class="action-btn" onclick="deleteFootprint('${h.date}')" style="color:var(--red); border-color:var(--red);">Delete</button>
+                          </td>
+                      </tr>
+                  `).join('');
+              }
+          }
+          
       } catch (err) {
           console.error("Admin Fetch Error:", err);
       }
@@ -432,6 +475,69 @@ window.handleGoogleLogin = async function() {
           if (res.ok) {
               // Reload the table
               window.loadAdminData();
+          } else {
+              const data = await res.json();
+              alert("Delete failed: " + data.error);
+          }
+      } catch (err) {
+          alert("Network error.");
+      }
+  };
+
+    // 🟢 NEW: Footprint Download Logic
+  window.downloadFootprint = async function(date) {
+      if (!window.currentFirebaseToken) return;
+      
+      const btn = event.target;
+      const originalText = btn.innerText;
+      btn.innerText = "Zipping...";
+      
+      try {
+          const res = await fetch('https://api.greekcalculator.in/api/admin/footprint-download', {
+              method: 'POST',
+              headers: { 
+                  'Authorization': `Bearer ${window.currentFirebaseToken}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ date })
+          });
+          
+          const data = await res.json();
+          if (res.ok) {
+              const blob = new Blob([JSON.stringify(data.data, null, 2)], {type: "application/json"});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `GC_Footprint_NIFTY_${date}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+          } else {
+              alert("Download failed: " + data.error);
+          }
+      } catch (err) {
+          alert("Network error.");
+      }
+      btn.innerText = originalText;
+  };
+
+  // 🟢 NEW: Footprint Delete Logic
+  window.deleteFootprint = async function(date) {
+      if (!confirm(`Are you absolutely sure you want to permanently delete the footprint data for NIFTY on ${date}?`)) return;
+      
+      if (!window.currentFirebaseToken) return;
+      
+      try {
+          const res = await fetch('https://api.greekcalculator.in/api/admin/footprint-delete', {
+              method: 'POST',
+              headers: { 
+                  'Authorization': `Bearer ${window.currentFirebaseToken}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ date })
+          });
+          
+          if (res.ok) {
+              window.loadAdminData(); // Reload the table
           } else {
               const data = await res.json();
               alert("Delete failed: " + data.error);
