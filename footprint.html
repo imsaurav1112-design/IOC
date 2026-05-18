@@ -605,7 +605,7 @@ const parseTime = (t) => {
             return;
         }
 
-      let minPrice = Infinity, maxPrice = -Infinity;
+        let minPrice = Infinity, maxPrice = -Infinity;
         
         timeKeys.forEach(t => {
             const candle = latestDataCache[t];
@@ -630,29 +630,26 @@ const parseTime = (t) => {
             maxPrice = 22100;
         }
 
-const getPriceY = (price) => {
+        const getPriceY = (price) => {
             const diffFromMin = price - minPrice;
             return height - X_AXIS_HEIGHT - 50 - (diffFromMin / TICK_SIZE * priceScale) + offsetY;
         };
         
         // 🟢 UPGRADED: Infinite Dynamic Grid & Scale Calculator
-        // Figure out what price represents the absolute top and bottom of the screen right now
         const priceAtTop = minPrice + ((height - X_AXIS_HEIGHT - 50 + offsetY) / priceScale) * TICK_SIZE;
         const priceAtBottom = minPrice + ((-50 + offsetY - height) / priceScale) * TICK_SIZE;
         
         const topBound = Math.max(priceAtTop, priceAtBottom);
         const botBound = Math.min(priceAtTop, priceAtBottom);
 
-        // Adjust grid density based on how far we are zoomed out
         let gridStep = TICK_SIZE;
-        if (priceScale < 8) gridStep = TICK_SIZE * 10;      // Zoomed out: Show every 50
-        else if (priceScale < 15) gridStep = TICK_SIZE * 4; // Medium: Show every 20
-        else if (priceScale < 30) gridStep = TICK_SIZE * 2; // Close: Show every 10
+        if (priceScale < 8) gridStep = TICK_SIZE * 10;      
+        else if (priceScale < 15) gridStep = TICK_SIZE * 4; 
+        else if (priceScale < 30) gridStep = TICK_SIZE * 2; 
 
         const startPrice = Math.floor(botBound / gridStep) * gridStep;
         const endPrice = Math.ceil(topBound / gridStep) * gridStep;
 
-        // Draw Horizontal Grid Background
         ctx.strokeStyle = isLight ? '#e2e8f0' : '#1e1e24'; 
         ctx.lineWidth = 1; ctx.beginPath();
         for (let p = startPrice; p <= endPrice; p += gridStep) {
@@ -661,7 +658,30 @@ const getPriceY = (price) => {
         }
         ctx.stroke();
 
-            // DRAW OHLC CANDLESTICK
+        let currentX = width - Y_AXIS_WIDTH - COL_WIDTH - GAP + offsetX;
+        let cumulativeDelta = 0;
+
+        for (let i = timeKeys.length - 1; i >= 0; i--) {
+            if (currentX + COL_WIDTH < (showVP ? VP_WIDTH : 0)) break; 
+            
+            const timeKey = timeKeys[i];
+            const candleData = latestDataCache[timeKey];
+            const matrix = candleData.volumes || {}; 
+            const prices = Object.keys(matrix).map(Number).sort((a,b) => b-a);
+            
+            let maxVol = 0, pocPrice = null, candleDelta = 0;
+            let totalBuyVol = 0, totalSellVol = 0;
+            
+            prices.forEach(p => {
+                const b = matrix[p].buy_vol, s = matrix[p].sell_vol;
+                candleDelta += (b - s);
+                totalBuyVol += b;
+                totalSellVol += s;
+                if (b+s > maxVol) { maxVol = b+s; pocPrice = p; }
+            });
+
+            cumulativeDelta += candleDelta;
+
             const isBullish = candleData.close >= candleData.open;
             const candleColor = isBullish ? '#10b981' : '#ef4444';
             const candleX = currentX + 15; 
@@ -697,7 +717,6 @@ const getPriceY = (price) => {
 
                 const volIntensity = (b + s) / maxVol;
                 
-                // Draw volume box
                 ctx.fillStyle = `rgba(59, 130, 246, ${volIntensity * 0.3})`;
                 ctx.fillRect(currentX + 30, y - priceScale/2, COL_WIDTH - 30, priceScale);
 
@@ -720,7 +739,6 @@ const getPriceY = (price) => {
             const panelY = height - X_AXIS_HEIGHT;
             const center = currentX + 30 + (COL_WIDTH - 30) / 2; 
             
-            // 🟢 FIX: Added Total Sell & Buy numbers right below the footprint
             ctx.fillStyle = isLight ? '#f1f5f9' : '#141415';
             ctx.fillRect(currentX, panelY, COL_WIDTH, 20);
             
@@ -732,7 +750,6 @@ const getPriceY = (price) => {
             ctx.textAlign = "left";
             ctx.fillStyle = isLight ? '#10b981' : '#6ee7b7';
             ctx.fillText(`${totalBuyVol}`, center + 10, panelY + 10);
-            // --------
             
             ctx.fillStyle = candleDelta > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
             ctx.fillRect(currentX, panelY + 20, COL_WIDTH, 20);
@@ -745,7 +762,6 @@ const getPriceY = (price) => {
             ctx.fillStyle = cumulativeDelta > 0 ? '#6ee7b7' : '#fca5a5';
             ctx.fillText(`ΣΔ: ${cumulativeDelta > 0 ? '+' : ''}${cumulativeDelta}`, currentX + COL_WIDTH/2, panelY + 50);
 
-            // Time Background
             ctx.fillStyle = isLight ? '#e2e8f0' : '#1a1a1d';
             ctx.fillRect(currentX, panelY + 60, COL_WIDTH, 20);
             ctx.fillStyle = isLight ? '#475569' : '#a1a1aa';
@@ -754,7 +770,6 @@ const getPriceY = (price) => {
             currentX -= (COL_WIDTH + GAP);
         }
 
-        // 🟢 VOLUME PROFILE RENDERER
         if (showVP && sessionStats.maxVPVol) {
             ctx.fillStyle = isLight ? '#f1f5f9' : '#09090b'; 
             ctx.fillRect(0, 0, VP_WIDTH, height - X_AXIS_HEIGHT);
@@ -793,7 +808,6 @@ const getPriceY = (price) => {
             }
         }
 
-        // 🟢 DEPTH 30 (DOM) RENDERER
         if (showDOM) {
             const DOM_WIDTH = 100; 
             const domStartX = width - Y_AXIS_WIDTH; 
@@ -803,7 +817,6 @@ const getPriceY = (price) => {
             Object.values(latestDomCache.asks).forEach(v => { if(v > maxDomVol) maxDomVol = v; });
 
             if (maxDomVol > 0) {
-                // Asks
                 Object.keys(latestDomCache.asks).forEach(pStr => {
                     const p = parseFloat(pStr);
                     const vol = latestDomCache.asks[pStr];
@@ -822,7 +835,6 @@ const getPriceY = (price) => {
                     ctx.fillText(vol >= 1000 ? (vol/1000).toFixed(1) + 'k' : vol, domStartX - 5, y);
                 });
 
-                // Bids
                 Object.keys(latestDomCache.bids).forEach(pStr => {
                     const p = parseFloat(pStr);
                     const vol = latestDomCache.bids[pStr];
@@ -843,8 +855,6 @@ const getPriceY = (price) => {
             }
         }
 
-// 🟢 UPGRADED: Infinite Y-Axis Rendering
-        // The isLight variable is already declared at the top of renderCanvas()
         ctx.fillStyle = isLight ? '#f1f5f9' : '#09090b';
         ctx.fillRect(width - Y_AXIS_WIDTH, 0, Y_AXIS_WIDTH, height);
         ctx.strokeStyle = isLight ? '#cbd5e1' : '#27272a'; 
@@ -856,35 +866,29 @@ const getPriceY = (price) => {
         for (let p = startPrice; p <= endPrice; p += gridStep) {
             const y = getPriceY(p);
             if (y > 0 && y < height - X_AXIS_HEIGHT) { 
-                // Draw a tiny tick mark
                 ctx.beginPath(); ctx.moveTo(width - Y_AXIS_WIDTH, y); ctx.lineTo(width - Y_AXIS_WIDTH + 4, y); ctx.stroke();
-                // Draw the label
                 ctx.fillText(p, width - Y_AXIS_WIDTH + 8, y); 
             }
         }
-    } // <--- 🟢 THE CLOSING BRACKET FOR renderCanvas() MUST GO HERE!
+    } // <--- END OF renderCanvas
 
-    // 🟢 TEST BACKDOOR: Allows the console to inject fake trades
+    // 🟢 TEST BACKDOOR
     window.testTick = function(price, isBuy, vol) {
         const timeKey = "09:15"; 
-        
         if (!latestDataCache[timeKey]) {
             latestDataCache[timeKey] = { 
                 open: price - 50, high: price + 50, low: price - 50, close: price, volumes: {} 
             };
         }
-
         const pStr = price.toString();
         if (!latestDataCache[timeKey].volumes[pStr]) {
             latestDataCache[timeKey].volumes[pStr] = { buy_vol: 0, sell_vol: 0 };
         }
-
         if (isBuy) {
             latestDataCache[timeKey].volumes[pStr].buy_vol += vol;
         } else {
             latestDataCache[timeKey].volumes[pStr].sell_vol += vol;
         }
-
         console.log(`Injected: ${isBuy ? 'BUY' : 'SELL'} ${vol} @ ${price}`);
         processSessionData();
         renderCanvas();
