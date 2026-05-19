@@ -320,11 +320,11 @@
     });
 
 // --- CHART CONFIGURATION ---
-    let COL_WIDTH = 180;       // 🟢 Changed to 'let' for horizontal stretching
+    let COL_WIDTH = 110;       // 🟢 Slimmed down from 180
     const Y_AXIS_WIDTH = 60;   
     const VP_WIDTH = 120;      
-    const X_AXIS_HEIGHT = 80;  
-    let GAP = 15;              // 🟢 Changed to 'let' 
+    const X_AXIS_HEIGHT = 25;  // 🟢 Shrunk down! Now it only holds the time
+    let GAP = 8;               // 🟢 Tighter gap between candles
     const TICK_SIZE = 5;     
 
   // --- CAMERA / INTERACTION STATE ---
@@ -632,12 +632,12 @@ const parseTime = (t) => {
 
         const getPriceY = (price) => {
             const diffFromMin = price - minPrice;
-            return height - X_AXIS_HEIGHT - 50 - (diffFromMin / TICK_SIZE * priceScale) + offsetY;
+            // 🟢 Adjusted padding to match the new smaller X-axis
+            return height - X_AXIS_HEIGHT - 20 - (diffFromMin / TICK_SIZE * priceScale) + offsetY;
         };
         
-        // 🟢 UPGRADED: Infinite Dynamic Grid & Scale Calculator
-        const priceAtTop = minPrice + ((height - X_AXIS_HEIGHT - 50 + offsetY) / priceScale) * TICK_SIZE;
-        const priceAtBottom = minPrice + ((-50 + offsetY - height) / priceScale) * TICK_SIZE;
+        const priceAtTop = minPrice + ((height - X_AXIS_HEIGHT - 20 + offsetY) / priceScale) * TICK_SIZE;
+        const priceAtBottom = minPrice + ((-20 + offsetY - height) / priceScale) * TICK_SIZE;
         
         const topBound = Math.max(priceAtTop, priceAtBottom);
         const botBound = Math.min(priceAtTop, priceAtBottom);
@@ -684,7 +684,9 @@ const parseTime = (t) => {
 
             const isBullish = candleData.close >= candleData.open;
             const candleColor = isBullish ? '#10b981' : '#ef4444';
-            const candleX = currentX + 15; 
+            
+            // 🟢 GoCharting Style: Anchor the candle visually to the far left of the column
+            const candleX = currentX + 6; 
             
             ctx.strokeStyle = candleColor;
             ctx.lineWidth = 2;
@@ -698,7 +700,19 @@ const parseTime = (t) => {
             const bodyHeight = Math.max(3, bodyBottom - bodyTop); 
             
             ctx.fillStyle = candleColor;
-            ctx.fillRect(candleX - 4, bodyTop - (priceScale/2), 8, bodyHeight + priceScale);
+            ctx.fillRect(candleX - 3, bodyTop - (priceScale/2), 6, bodyHeight + priceScale);
+
+            // 🟢 GoCharting Style: Draw a subtle center divider for the footprint
+            const boxLeft = currentX + 16;
+            const boxWidth = COL_WIDTH - 20;
+            const center = boxLeft + (boxWidth / 2);
+
+            ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(center, getPriceY(candleData.high) - priceScale/2);
+            ctx.lineTo(center, getPriceY(candleData.low) + priceScale/2);
+            ctx.stroke();
 
             prices.forEach(price => {
                 const y = getPriceY(price);
@@ -706,8 +720,6 @@ const parseTime = (t) => {
 
                 const b = matrix[price].buy_vol;
                 const s = matrix[price].sell_vol;
-                
-                const center = currentX + 30 + (COL_WIDTH - 30) / 2; 
                 
                 const bidBelow = matrix[price - TICK_SIZE] ? matrix[price - TICK_SIZE].sell_vol : 0;
                 const askAbove = matrix[price + TICK_SIZE] ? matrix[price + TICK_SIZE].buy_vol : 0;
@@ -718,54 +730,60 @@ const parseTime = (t) => {
                 const volIntensity = (b + s) / maxVol;
                 
                 ctx.fillStyle = `rgba(59, 130, 246, ${volIntensity * 0.3})`;
-                ctx.fillRect(currentX + 30, y - priceScale/2, COL_WIDTH - 30, priceScale);
+                ctx.fillRect(boxLeft, y - priceScale/2, boxWidth, priceScale);
 
                 if (price === pocPrice) {
-                    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
-                    ctx.strokeRect(currentX + 30, y - priceScale/2, COL_WIDTH - 30, priceScale);
+                    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
+                    ctx.strokeRect(boxLeft, y - priceScale/2, boxWidth, priceScale);
                 }
 
-                ctx.font = "bold 11px 'JetBrains Mono'"; ctx.textBaseline = "middle";
+                ctx.font = "bold 10px 'JetBrains Mono'"; 
+                ctx.textBaseline = "middle";
 
+                // Sell Side (Left)
                 ctx.textAlign = "right";
-                ctx.fillStyle = isSellImb ? '#ef4444' : '#fca5a5';
-                ctx.fillText(s, center - 10, y);
+                ctx.fillStyle = isSellImb ? '#ef4444' : (isLight ? '#475569' : '#d4d4d8');
+                ctx.fillText(s, center - 4, y);
 
+                // Buy Side (Right)
                 ctx.textAlign = "left";
-                ctx.fillStyle = isBuyImb ? '#10b981' : '#6ee7b7';
-                ctx.fillText(b, center + 10, y);
+                ctx.fillStyle = isBuyImb ? '#10b981' : (isLight ? '#475569' : '#d4d4d8');
+                ctx.fillText(b, center + 4, y);
             });
             
+            // 🟢 NEW: Dynamic Canvas Stats (Pinned directly below the candle's lowest point)
+            const lowestPrice = Math.min(...prices, candleData.low);
+            let statsY = getPriceY(lowestPrice) + priceScale / 2 + 15;
+
+            // Only draw if the stats are visible above the time axis
+            if (statsY < height - X_AXIS_HEIGHT) {
+                ctx.font = "bold 10px 'JetBrains Mono'";
+                ctx.textAlign = "center";
+
+                // Delta
+                ctx.fillStyle = candleDelta > 0 ? '#10b981' : '#ef4444';
+                ctx.fillText(`Δ: ${candleDelta > 0 ? '+' : ''}${candleDelta}`, center, statsY);
+                statsY += 14;
+
+                // Cumulative Delta
+                ctx.fillStyle = cumulativeDelta > 0 ? '#6ee7b7' : '#fca5a5';
+                ctx.fillText(`ΣΔ: ${cumulativeDelta > 0 ? '+' : ''}${cumulativeDelta}`, center, statsY);
+                statsY += 14;
+
+                // Total Volumes
+                ctx.fillStyle = isLight ? '#64748b' : '#a1a1aa';
+                ctx.fillText(`${totalSellVol} x ${totalBuyVol}`, center, statsY);
+            }
+
+            // 🟢 Minimal Bottom Timeline
             const panelY = height - X_AXIS_HEIGHT;
-            const center = currentX + 30 + (COL_WIDTH - 30) / 2; 
+            ctx.fillStyle = isLight ? '#f8fafc' : '#0c0c0f';
+            ctx.fillRect(currentX, panelY, COL_WIDTH, X_AXIS_HEIGHT);
             
-            ctx.fillStyle = isLight ? '#f1f5f9' : '#141415';
-            ctx.fillRect(currentX, panelY, COL_WIDTH, 20);
-            
-            ctx.font = "bold 10px 'JetBrains Mono'";
-            ctx.textAlign = "right";
-            ctx.fillStyle = isLight ? '#ef4444' : '#fca5a5';
-            ctx.fillText(`${totalSellVol}`, center - 10, panelY + 10);
-            
-            ctx.textAlign = "left";
-            ctx.fillStyle = isLight ? '#10b981' : '#6ee7b7';
-            ctx.fillText(`${totalBuyVol}`, center + 10, panelY + 10);
-            
-            ctx.fillStyle = candleDelta > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-            ctx.fillRect(currentX, panelY + 20, COL_WIDTH, 20);
-            ctx.fillStyle = candleDelta > 0 ? '#10b981' : '#ef4444';
-            ctx.textAlign = "center"; 
-            ctx.fillText(`Δ: ${candleDelta > 0 ? '+' : ''}${candleDelta}`, currentX + COL_WIDTH/2, panelY + 30);
-
-            ctx.fillStyle = cumulativeDelta > 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)';
-            ctx.fillRect(currentX, panelY + 40, COL_WIDTH, 20);
-            ctx.fillStyle = cumulativeDelta > 0 ? '#6ee7b7' : '#fca5a5';
-            ctx.fillText(`ΣΔ: ${cumulativeDelta > 0 ? '+' : ''}${cumulativeDelta}`, currentX + COL_WIDTH/2, panelY + 50);
-
-            ctx.fillStyle = isLight ? '#e2e8f0' : '#1a1a1d';
-            ctx.fillRect(currentX, panelY + 60, COL_WIDTH, 20);
             ctx.fillStyle = isLight ? '#475569' : '#a1a1aa';
-            ctx.fillText(timeKey, currentX + COL_WIDTH/2, panelY + 70);
+            ctx.font = "bold 11px 'JetBrains Mono'";
+            ctx.textAlign = "center";
+            ctx.fillText(timeKey, center, panelY + 16);
 
             currentX -= (COL_WIDTH + GAP);
         }
@@ -871,7 +889,6 @@ const parseTime = (t) => {
             }
         }
     } // <--- END OF renderCanvas
-
 
 </script>
 </body>
