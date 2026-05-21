@@ -400,27 +400,27 @@
 
     // --- UI & THEME TOGGLE LOGIC ---
  // 🟢 Mobile Nav Toggle
-   window.toggleMobileNav = function(event) {
-        if(event) event.stopPropagation();
-        const nav = document.getElementById('left-nav');
-        if (!nav) return; 
-        
-        nav.classList.toggle('menu-open');
-        
-        if (nav.classList.contains('menu-open')) {
-            document.addEventListener('click', function closeMenu(e) {
-                // Check if clicked inside settings to prevent closing
-                const settingsPanel = document.getElementById('settings-panel');
-                if (settingsPanel && settingsPanel.contains(e.target)) return;
-                
-                if (!nav.contains(e.target)) {
-                    nav.classList.remove('menu-open');
-                    document.removeEventListener('click', closeMenu);
-                }
-            }, { capture: true });
-        }
-    };
-
+  window.toggleMobileNav = function(event) {
+    if(event) event.stopPropagation();
+    const nav = document.getElementById('left-nav');
+    if (!nav) return; 
+    
+    nav.classList.toggle('menu-open');
+    
+    if (nav.classList.contains('menu-open')) {
+        document.addEventListener('click', function closeMenu(e) {
+            // Check if clicked inside settings to prevent closing
+            const settingsPanel = document.getElementById('settings-panel');
+            if (settingsPanel && settingsPanel.contains(e.target)) return;
+            
+            if (!nav.contains(e.target)) {
+                nav.classList.remove('menu-open');
+                document.removeEventListener('click', closeMenu);
+            }
+        }, { capture: true });
+    }
+};
+    
 // 🟢 The Date Picker Bridge
     window.triggerDateChange = function(val) {
         // 1. Trigger the gold glow effect
@@ -460,19 +460,22 @@
     });
     
 // 🟢 Toggle Settings
-    window.toggleSettings = function(event) {
-        if(event) event.stopPropagation();
-        const panel = document.getElementById('settings-panel');
-        const btn = document.getElementById('btn-settings');
-        
-        if (panel.style.display === 'flex') {
-            panel.style.display = 'none';
-            btn.classList.remove('active');
-        } else {
-            panel.style.display = 'flex';
-            btn.classList.add('active');
-        }
-    };
+window.toggleSettings = function(event) {
+    if(event) event.stopPropagation();
+    const panel = document.getElementById('settings-panel');
+    const btn = document.getElementById('btn-settings');
+    
+    // Close other custom menus first
+    document.querySelectorAll('.custom-menu').forEach(m => m.style.display = 'none');
+    
+    if (panel.style.display === 'flex') {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+    } else {
+        panel.style.display = 'flex';
+        btn.classList.add('active');
+    }
+};
     window.toggleTheme = function() {
         document.body.classList.toggle('light-theme');
         const isLight = document.body.classList.contains('light-theme');
@@ -497,16 +500,30 @@
     };
 
 // Click outside to close settings
-    document.addEventListener('click', function(event) {
-        const panel = document.getElementById('settings-panel');
-        const btn = document.getElementById('btn-settings');
-        if (panel && panel.style.display === 'flex') {
-            if (!panel.contains(event.target) && (!btn || !btn.contains(event.target))) {
-                panel.style.display = 'none';
-                if(btn) btn.classList.remove('active');
-            }
-        }
+document.addEventListener('click', function(event) {
+    let clickedInsideMenu = false;
+    let clickedOnButton = false;
+
+    // Handle Header Dropdowns
+    document.querySelectorAll('.custom-menu').forEach(menu => {
+        if (menu.contains(event.target)) clickedInsideMenu = true;
     });
+    if (event.target.closest('.custom-dropdown-wrapper')) clickedOnButton = true;
+
+    if (!clickedInsideMenu && !clickedOnButton) {
+        document.querySelectorAll('.custom-menu').forEach(m => m.style.display = 'none');
+    }
+
+    // Handle Settings Panel
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsBtn = document.getElementById('btn-settings');
+    if (settingsPanel && settingsPanel.style.display === 'flex') {
+        if (!settingsPanel.contains(event.target) && (!settingsBtn || !settingsBtn.contains(event.target))) {
+            settingsPanel.style.display = 'none';
+            if(settingsBtn) settingsBtn.classList.remove('active');
+        }
+    }
+});
     // Check saved theme on load
     document.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('owl-theme') === 'light') {
