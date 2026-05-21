@@ -419,17 +419,17 @@
         }
     };
 
-// 🟢 The Date Picker Bridge (Triggers Firebase)
+// 🟢 The Date Picker Bridge
     window.triggerDateChange = function(val) {
+        // 1. Trigger the gold glow effect
         window.updateDateUI(val); 
         
-        // Trigger the manual 'change' event on the hidden input so the Firebase polling loop catches it
-        const input = document.getElementById('history-date');
-        input.dispatchEvent(new Event('change'));
+        // (We removed the dispatchEvent here because the browser natively 
+        // alerts the Firebase loop that the date was changed!)
         
-        // Auto-close menu on mobile
+        // 2. Auto-close menu on mobile
         const nav = document.getElementById('left-nav');
-        if (nav.classList.contains('menu-open')) {
+        if (nav && nav.classList.contains('menu-open')) {
             nav.classList.remove('menu-open');
         }
     };
