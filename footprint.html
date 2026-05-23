@@ -987,7 +987,7 @@ const parseTime = (t) => {
 
         if (minPrice === Infinity || maxPrice === -Infinity) { minPrice = 22000; maxPrice = 22100; }
 
-        // 🟢 FIX: Main Chart stops above TOTAL_BOTTOM_RESERVE
+     // 🟢 FIX: Main Chart stops above TOTAL_BOTTOM_RESERVE
         const MAIN_CHART_BOTTOM = height - TOTAL_BOTTOM_RESERVE;
 
         const getPriceY = (price) => {
@@ -1004,6 +1004,9 @@ const parseTime = (t) => {
         if (priceScale < 8) gridStep = TICK_SIZE * 10;     
         else if (priceScale < 15) gridStep = TICK_SIZE * 4; 
         else if (priceScale < 30) gridStep = TICK_SIZE * 2; 
+        
+        const startPrice = Math.floor(botBound / gridStep) * gridStep;
+        const endPrice = Math.ceil(topBound / gridStep) * gridStep;
 
         ctx.strokeStyle = isLight ? '#e2e8f0' : '#1e1e24'; 
         ctx.lineWidth = 1; ctx.beginPath();
@@ -1012,7 +1015,7 @@ const parseTime = (t) => {
             if (y > 0 && y < MAIN_CHART_BOTTOM) { ctx.moveTo(0, y); ctx.lineTo(width - Y_AXIS_WIDTH, y); }
         }
         ctx.stroke();
-
+        
         let currentX = width - Y_AXIS_WIDTH - COL_WIDTH - GAP + offsetX;
         
         // --- PRE-CALCULATE X POSITIONS FOR ZONES AND CROSSHAIR ---
@@ -1260,7 +1263,7 @@ const parseTime = (t) => {
         ctx.strokeStyle = isLight ? '#cbd5e1' : '#27272a'; 
         ctx.beginPath(); ctx.moveTo(width - Y_AXIS_WIDTH, 0); ctx.lineTo(width - Y_AXIS_WIDTH, height); ctx.stroke();
 
-        ctx.fillStyle = isLight ? '#0f172a' : '#f4f4f5'; 
+ctx.fillStyle = isLight ? '#0f172a' : '#f4f4f5'; 
         ctx.font = "bold 11px 'JetBrains Mono'"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
 
         for (let p = startPrice; p <= endPrice; p += gridStep) {
