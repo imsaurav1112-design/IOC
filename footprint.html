@@ -728,7 +728,13 @@ function handlePointerMove(e) {
     window.addEventListener('touchcancel', handlePointerUp);
 
 // --- DATA POLLING ---
-    let isLiveMode = true;
+let isLiveMode = true;
+
+// 🟢 FIX: DECLARE GLOBAL DATA CONTAINERS
+let latestDataCache = {};
+let latestDomCache = { bids: {}, asks: {} };
+let volumeProfile = {};
+let sessionStats = {};
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) return window.location.href = "index.html";
