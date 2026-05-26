@@ -1769,7 +1769,7 @@ if (heroBox) {
 
       // 🟢 Fallback to standard Razorpay
       try {
-          const orderResp = await fetch('https://api.greekcalculator.in/create-order', {
+          const orderResp = await fetch('https://api.greekcalculator.in/api/create-order', {
               method: 'POST',
               headers: { 
                   'Authorization': `Bearer ${window.currentFirebaseToken}`,
