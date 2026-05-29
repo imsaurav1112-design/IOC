@@ -887,19 +887,17 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
             </div>
 
             <div style="flex:1;"></div>
-            <button class="nav-btn" onclick="window.open('backtester', '_blank')" title="Open Backtester">
+<button class="nav-btn" onclick="window.open('backtester', '_blank')" title="Open Backtester">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
             </button>
        </div>
-    </div>
-    
     <div class="table-wrapper" id="table-scroll-area" style="position: relative;">
         
         <div id="holiday-overlay" class="holiday-overlay">
+            <div class="drag-handle-bar" id="holiday-drag">⠿ Drag to Move ⠿</div>
             <div class="holiday-msg" id="holiday-title">Market Closed</div>
             <div class="holiday-sub" id="holiday-desc">Trading is offline.</div>
-        </div>
-                    
+        </div>                    
         <table id="main-table">
           <thead>
             <tr>
@@ -942,7 +940,7 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 Change History
             </div>
-            <div style="flex: 1; overflow-y: auto;">
+<div style="flex: 1; overflow-y: auto;">
                 <table class="history-table">
                     <thead><tr><th style="width: 70px;">TIME</th><th colspan="2">SCENARIO EVENT</th></tr></thead>
                     <tbody id="coa-logs-body">
@@ -951,10 +949,10 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
                 </table>
             </div>
         </div>
-    </div>
-</div>
-
-<footer>
+    </div> 
+        </div>
+            
+            <footer>
     <div class="footer-left" id="footer-data" style="opacity: 0;">
         <span>PCR: <b id="f-pcr">--</b></span>
         <span class="divider" style="height: 12px;"></span>
@@ -1216,7 +1214,8 @@ const holidayDrag = document.getElementById("holiday-drag");
 
 let isDraggingHoliday = false;
 let holidayOffsetX, holidayOffsetY;
-
+        
+if (holidayDrag && holidayBox) {
 holidayDrag.addEventListener("mousedown", (e) => {
     isDraggingHoliday = true;
     
@@ -1228,6 +1227,7 @@ holidayDrag.addEventListener("mousedown", (e) => {
     // Strip the initial CSS centering margin so JavaScript absolute coordinates take over cleanly
     holidayBox.style.marginLeft = "0px"; 
 });
+}
 
 document.addEventListener("mousemove", (e) => {
     if (!isDraggingHoliday) return;
