@@ -125,7 +125,7 @@ header {
     flex-shrink: 0; 
     gap: 12px; 
     transition: background-color 0.3s, border-color 0.3s;
-    position: relative; /* 🟢 Forces absolute centering inside the header container */
+    position: relative;
 }
 
 .logo { text-decoration: none; font-weight: 800; font-size: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; padding-right: 12px; border-right: 1px solid var(--border);letter-spacing: 0.5px; white-space: nowrap;}
@@ -143,7 +143,7 @@ header button.primary-btn:hover { background: #2563eb; box-shadow: 0 0 10px var(
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%); /* 🟢 Absolute dead-center centering */
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     gap: 20px;
@@ -525,9 +525,9 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
 .holiday-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(11, 15, 25, 0.85); /* 🟢 Increased opacity for total data shielding */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(11, 15, 25, 0.85); 
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 100;
     display: none; 
     flex-direction: column;
@@ -813,6 +813,7 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
     <div class="table-wrapper" id="table-scroll-area">
             
             <div class="table-wrapper" id="table-scroll-area" style="position: relative;">
+        <!-- 🟢 HOLIDAY OVERLAY -->
         <div id="holiday-overlay" class="holiday-overlay">
             <div class="holiday-msg" id="holiday-title">Market Closed</div>
             <div class="holiday-sub" id="holiday-desc">Trading is offline.</div>
