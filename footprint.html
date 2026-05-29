@@ -517,30 +517,7 @@
     let showZones = true;
     let showSubCharts = true;
 
-    // --- UI & THEME TOGGLE LOGIC ---
- // 🟢 Mobile Nav Toggle
-   window.toggleMobileNav = function(event) {
-        if(event) event.stopPropagation();
-        const nav = document.getElementById('left-nav');
-        if (!nav) return; 
-
-        nav.classList.toggle('menu-open');
-
-        if (nav.classList.contains('menu-open')) {
-            document.addEventListener('click', function closeMenu(e) {
-                // Check if clicked inside settings to prevent closing
-                const settingsPanel = document.getElementById('settings-panel');
-                if (settingsPanel && settingsPanel.contains(e.target)) return;
-
-                if (!nav.contains(e.target)) {
-                    nav.classList.remove('menu-open');
-                    document.removeEventListener('click', closeMenu);
-                }
-            }, { capture: true });
-        }
-    };
-
-    // drawing-tools.js
+        // drawing-tools.js
 
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById('drawing-canvas');
@@ -672,6 +649,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (drawToggle) drawToggle.checked = false;
                 window.toggleDrawingMode(); 
             }
+        }
+    };
+
+
+    // --- UI & THEME TOGGLE LOGIC ---
+ // 🟢 Mobile Nav Toggle
+   window.toggleMobileNav = function(event) {
+        if(event) event.stopPropagation();
+        const nav = document.getElementById('left-nav');
+        if (!nav) return; 
+
+        nav.classList.toggle('menu-open');
+
+        if (nav.classList.contains('menu-open')) {
+            document.addEventListener('click', function closeMenu(e) {
+                // Check if clicked inside settings to prevent closing
+                const settingsPanel = document.getElementById('settings-panel');
+                if (settingsPanel && settingsPanel.contains(e.target)) return;
+
+                if (!nav.contains(e.target)) {
+                    nav.classList.remove('menu-open');
+                    document.removeEventListener('click', closeMenu);
+                }
+            }, { capture: true });
         }
     };
 
