@@ -277,16 +277,27 @@ header button.primary-btn:hover { background: #2563eb; box-shadow: 0 0 10px var(
 .custom-option input { margin: 0; accent-color: var(--accent); }
 
 .left-nav {
-    width: 52px; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 16px; gap: 16px; flex-shrink: 0; z-index: 20; position: relative;
+    width: 52px; 
+    background: var(--card); 
+    border-right: 1px solid var(--border); 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding-top: 16px; 
+    padding-bottom: 16px; /* Adds breathing room at the bottom */
+    flex-shrink: 0; 
+    z-index: 100; 
+    position: relative;
+    overflow: visible; 
 }
 .nav-content { 
     display: flex; 
     flex-direction: column; 
     width: 100%; 
     align-items: center; 
+    justify-content: flex-start; /* Groups them neatly at the top */
+    gap: 16px; /* 🟢 This forces an exact, identical 16px gap between EVERY button */
     height: 100%; 
-    justify-content: space-evenly; /* 🟢 This spreads them perfectly equally! */
-    gap: 0; /* Remove the hardcoded gap so space-evenly can do the math */
 }
 .nav-btn { width: 36px; height: 36px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
 .nav-btn:hover { background: var(--section); color: var(--text); border: 1px solid var(--border); }
