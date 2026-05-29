@@ -41,6 +41,39 @@
     user-select: none;         /* Standard */
          }
 
+/* drawing-tools.css */
+.drawing-canvas {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 8000; cursor: crosshair;
+}
+.drawing-canvas.active { pointer-events: auto; }
+
+.drawing-toolbar {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; 
+    display: none; /* 🟢 FIX: Hidden by default! */
+    align-items: center; gap: 8px; z-index: 8001;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.light-theme .drawing-toolbar { box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+.draw-btn {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 16px; cursor: pointer; padding: 6px;
+    border-radius: 6px; transition: 0.2s;
+}
+.draw-btn:hover { background: var(--section); color: var(--text); }
+.draw-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+
+.draw-toggle-label {
+    display: flex; align-items: center; gap: 6px; font-size: 12px;
+    font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.draw-toggle-label input { accent-color: var(--accent); cursor: pointer; }
+.drag-handle { color: var(--border); cursor: grab; font-weight: bold; margin-right: 4px; user-select: none; }
+    
+
     /* --- 1. CLEANED HEADER --- */
     header { 
         height: 52px; background: var(--card); border-bottom: 1px solid var(--border); 
@@ -298,6 +331,21 @@
 </head>
 <body>
 
+    <canvas id="drawing-canvas" class="drawing-canvas"></canvas>
+
+<div class="drawing-toolbar" id="drawing-toolbar">
+    <div class="drag-handle" id="draw-drag" title="Drag to Move">⋮⋮</div>
+    <button class="draw-btn active" id="tool-pencil" onclick="setDrawTool('pencil')" title="Pencil">✏️</button>
+    <button class="draw-btn" id="tool-line" onclick="setDrawTool('line')" title="Straight Line">📏</button>
+    <div class="divider" style="height: 20px; background: var(--border);"></div>
+    <button class="draw-btn" onclick="clearCanvas()" title="Clear All">🗑️</button>
+    <div class="divider" style="height: 20px; background: var(--border);"></div>
+    <label class="draw-toggle-label">
+        <input type="checkbox" id="draw-mode-toggle" onchange="toggleDrawingMode()">
+        <span class="draw-toggle-text">Draw Mode</span>
+    </label>
+</div>
+
 <header>
     <a href="/" class="logo"><span>GC</span></a>
 
@@ -347,6 +395,13 @@
             </button>
             <button class="tool-btn" title="Measure" style="align-self: center;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21L3 3"></path><path d="M21 3v6"></path><path d="M21 3h-6"></path></svg>
+            </button>
+
+            <button class="nav-btn" id="nav-btn-draw" onclick="toggleDrawingToolbar()" title="Toggle Drawing Tools">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
             </button>
 
             <div class="tool-btn" id="date-btn-wrapper" title="Historical Date" style="position: relative; cursor: pointer; align-self: center; transition: all 0.3s ease;">
@@ -492,7 +547,141 @@
         }
     };
 
-// 🟢 The Date Picker Bridge
+    // drawing-tools.js
+
+document.addEventListener("DOMContentLoaded", () => {
+    const canvas = document.getElementById('drawing-canvas');
+    if (!canvas) return; // Failsafe if canvas isn't on the page
+    
+    const ctx = canvas.getContext('2d');
+    let isDrawingMode = false;
+    let isDrawing = false;
+    let currentTool = 'pencil'; 
+    let startX, startY;
+    let snapshot;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.toggleDrawingMode = function() {
+        isDrawingMode = document.getElementById('draw-mode-toggle').checked;
+        if (isDrawingMode) canvas.classList.add('active');
+        else canvas.classList.remove('active');
+    };
+
+    window.setDrawTool = function(tool) {
+        currentTool = tool;
+        document.getElementById('tool-pencil').classList.remove('active');
+        document.getElementById('tool-line').classList.remove('active');
+        document.getElementById(`tool-${tool}`).classList.add('active');
+    };
+
+    window.clearCanvas = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    function getStrokeColor() {
+        return document.body.classList.contains('light-theme') ? '#2563eb' : '#3b82f6';
+    }
+
+    const startDraw = (e) => {
+        if (!isDrawingMode) return;
+        isDrawing = true;
+        startX = e.clientX || e.touches[0].clientX;
+        startY = e.clientY || e.touches[0].clientY;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.strokeStyle = getStrokeColor();
+        snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    };
+
+    const drawing = (e) => {
+        if (!isDrawing || !isDrawingMode) return;
+        const currentX = e.clientX || e.touches[0].clientX;
+        const currentY = e.clientY || e.touches[0].clientY;
+
+        if (currentTool === 'pencil') {
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+        } else if (currentTool === 'line') {
+            ctx.putImageData(snapshot, 0, 0);
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+        }
+    };
+
+    const stopDraw = () => { isDrawing = false; };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', drawing);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawing(e); }, { passive: false });
+    canvas.addEventListener('touchend', stopDraw);
+
+    // --- DRAGGABLE TOOLBAR LOGIC ---
+    const drawToolbar = document.getElementById("drawing-toolbar");
+    const drawDragHandle = document.getElementById("draw-drag");
+
+    let isDraggingDraw = false;
+    let drawOffsetX, drawOffsetY;
+
+    if (drawDragHandle && drawToolbar) {
+        drawDragHandle.addEventListener("mousedown", (e) => {
+            isDraggingDraw = true;
+            const rect = drawToolbar.getBoundingClientRect();
+            drawOffsetX = e.clientX - rect.left;
+            drawOffsetY = e.clientY - rect.top;
+            drawToolbar.style.transform = "none";
+            drawToolbar.style.bottom = "auto"; 
+            drawToolbar.style.left = `${rect.left}px`;
+            drawToolbar.style.top = `${rect.top}px`;
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isDraggingDraw) return;
+            drawToolbar.style.left = `${e.clientX - drawOffsetX}px`;
+            drawToolbar.style.top = `${e.clientY - drawOffsetY}px`;
+        });
+
+        document.addEventListener("mouseup", () => { isDraggingDraw = false; });
+    }
+});
+
+    // --- 🟢 TOGGLE TOOLBAR VISIBILITY LOGIC ---
+    window.toggleDrawingToolbar = function() {
+        const toolbar = document.getElementById('drawing-toolbar');
+        const navBtn = document.getElementById('nav-btn-draw');
+        
+        if (!toolbar) return;
+
+        // Check if it's currently hidden
+        if (toolbar.style.display === 'none' || toolbar.style.display === '') {
+            toolbar.style.display = 'flex'; // Show it
+            if (navBtn) navBtn.classList.add('active'); // Highlight the nav button
+        } else {
+            toolbar.style.display = 'none'; // Hide it
+            if (navBtn) navBtn.classList.remove('active'); // Un-highlight the nav button
+            
+            // 🟢 SMART FAILSAFE: If they hide the toolbar while Draw Mode is active, 
+            // automatically turn off Draw Mode so they don't get stuck unable to click the table!
+            if (isDrawingMode) {
+                const drawToggle = document.getElementById('draw-mode-toggle');
+                if (drawToggle) drawToggle.checked = false;
+                window.toggleDrawingMode(); 
+            }
+        }
+    };
+
 // 🟢 The Date Picker Bridge
     window.triggerDateChange = function(val) {
         // 1. Trigger the gold glow effect
