@@ -763,7 +763,7 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
         <canvas id="drawing-canvas" class="drawing-canvas"></canvas>
 
 <div class="drawing-toolbar" id="drawing-toolbar">
-    <div class="drag-handle" id="draw-drag" title="Drag to Move">⋮⋮</div>
+    <div class="drag-handle">⋮⋮</div>
     <button class="draw-btn active" id="tool-pencil" onclick="setDrawTool('pencil')" title="Pencil">✏️</button>
     <button class="draw-btn" id="tool-line" onclick="setDrawTool('line')" title="Straight Line">📏</button>
     <div class="divider" style="height: 20px; background: var(--border);"></div>
@@ -891,13 +891,17 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
             </button>
        </div>
+    </div> <!-- END OF LEFT NAV -->
+
+    <!-- 🟢 1. THE TABLE AREA -->
     <div class="table-wrapper" id="table-scroll-area" style="position: relative;">
         
         <div id="holiday-overlay" class="holiday-overlay">
             <div class="drag-handle-bar" id="holiday-drag">⠿ Drag to Move ⠿</div>
             <div class="holiday-msg" id="holiday-title">Market Closed</div>
             <div class="holiday-sub" id="holiday-desc">Trading is offline.</div>
-        </div>                    
+        </div>
+                    
         <table id="main-table">
           <thead>
             <tr>
@@ -912,15 +916,16 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
         </table>
     </div>
 
+    <!-- 🟢 2. THE RIGHT SIDEBAR -->
     <div class="right-sidebar" id="intel-panel">
-<div class="intel-section" style="position: relative; background: var(--bg); padding: 15px 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border);">
-    <div style="font-size: 12px; display: flex; gap: 15px; font-family: 'Ubuntu Mono', monospace; padding-right: 20px;">
-        <span style="color: var(--muted);">SUP: <b id="coa-sup-state" style="color:var(--green);">--</b></span>
-        <span style="color: var(--muted);">RES: <b id="coa-res-state" style="color:var(--red);">--</b></span>
-    </div>
-    
-    <button onclick="toggleIntelPanel()" style="position: absolute; top: 12px; right: 12px; background:transparent; border:none; color:var(--muted); cursor:pointer; font-size: 14px; transition: 0.2s; padding: 4px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">✖</button>
-</div>
+        <div class="intel-section" style="position: relative; background: var(--bg); padding: 15px 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border);">
+            <div style="font-size: 12px; display: flex; gap: 15px; font-family: 'Ubuntu Mono', monospace; padding-right: 20px;">
+                <span style="color: var(--muted);">SUP: <b id="coa-sup-state" style="color:var(--green);">--</b></span>
+                <span style="color: var(--muted);">RES: <b id="coa-res-state" style="color:var(--red);">--</b></span>
+            </div>
+            
+            <button onclick="toggleIntelPanel()" style="position: absolute; top: 12px; right: 12px; background:transparent; border:none; color:var(--muted); cursor:pointer; font-size: 14px; transition: 0.2s; padding: 4px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">✖</button>
+        </div>
 
         <div class="intel-section">
             <div class="intel-header">
@@ -940,7 +945,7 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 Change History
             </div>
-<div style="flex: 1; overflow-y: auto;">
+            <div style="flex: 1; overflow-y: auto;">
                 <table class="history-table">
                     <thead><tr><th style="width: 70px;">TIME</th><th colspan="2">SCENARIO EVENT</th></tr></thead>
                     <tbody id="coa-logs-body">
@@ -949,10 +954,12 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
                 </table>
             </div>
         </div>
-    </div> 
-        </div>
-            
-            <footer>
+    </div>
+
+</div> <!-- 🟢 3. THIS CORRECTLY CLOSES THE WORKSPACE SO THE FOOTER CAN DROP -->
+
+<!-- 🟢 4. THE FOOTER (Now safe at the absolute bottom) -->
+<footer>
     <div class="footer-left" id="footer-data" style="opacity: 0;">
         <span>PCR: <b id="f-pcr">--</b></span>
         <span class="divider" style="height: 12px;"></span>
@@ -978,8 +985,8 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
     <input type="number" id="inp-spot" style="display:none;">
 </footer>
 
-</div>
-
+</div> <!-- ENDS PAYWALL-CONTENT -->
+        
 <div class="modal-overlay" id="chart-modal" onclick="closeStrikeCharts(event)">
     <div class="modal-content">
         <button class="modal-close" onclick="closeStrikeCharts(event)">✖</button>
