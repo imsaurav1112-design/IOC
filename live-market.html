@@ -1901,7 +1901,10 @@ function updateMarketIntelligence(coa) {
             // Highlight specific events
             if (lowerMsg.includes('bullish') || lowerMsg.includes('support') || lowerMsg.includes('consolidated')) msgColor = 'var(--green)';
             if (lowerMsg.includes('bearish') || lowerMsg.includes('resistance')) msgColor = 'var(--red)';
-            if (lowerMsg.includes('weak') || lowerMsg.includes('shifting') || lowerMsg.includes('wtt') || lowerMsg.includes('wtb')) msgColor = 'var(--gold)';
+            
+            // 🟢 UPDATED: Highlight 'stt' and 'stb' in Gold
+            if (lowerMsg.includes('weak') || lowerMsg.includes('shifting') || lowerMsg.includes('stt') || lowerMsg.includes('stb')) msgColor = 'var(--gold)';
+            
             if (lowerMsg.includes('strong')) msgColor = 'var(--accent)'; 
             if (lowerMsg.includes('initial 9:15 am')) msgColor = 'var(--muted)'; 
             
