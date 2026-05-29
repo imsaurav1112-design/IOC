@@ -59,6 +59,61 @@ body {
     width: 100vw;
     overflow: hidden; 
 }
+        /* --- GLOBAL LOADING SCREEN --- */
+.global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    background-color: var(--bg);
+    z-index: 999999; /* Forces it above all modals and headers */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.global-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.spinner {
+    width: 45px;
+    height: 45px;
+    border: 4px solid var(--border);
+    border-top: 4px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.loader-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 1px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
   
 header { 
     height: 52px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; flex-shrink: 0; gap: 12px; transition: background-color 0.3s, border-color 0.3s;
@@ -549,6 +604,12 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
 </script>
 </head>
 <body>
+        <div id="global-loader" class="global-loader">
+  <div class="loader-content">
+        <div class="spinner"></div>
+        <div class="loader-text">Connecting to Live Market...</div>
+    </div>
+    </div>
 <header>
     <a href="/index" class="logo"><span>GC</span>Live</a>
 
@@ -770,6 +831,13 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
 
 <script>
 const UPSTOX_API = 'https://api.greekcalculator.in';
+
+        let initialLoadComplete = false;
+
+window.hideGlobalLoader = function() {
+    const loader = document.getElementById('global-loader');
+    if (loader) loader.classList.add('hidden');
+};
 
 let globalRows = [];
 let globalSym = '';
@@ -1145,13 +1213,24 @@ async function fetchUpstoxChain(quiet = false) {
     renderTable(globalRows, sym, data, quiet); 
     updateKeyLevels(data.chain, data.coa);
 
+    // 🟢 NEW: Fade out the loader once the first table render is complete!
+    if (!initialLoadComplete) {
+        initialLoadComplete = true;
+        setTimeout(window.hideGlobalLoader, 300); // Small delay to let UI paint smoothly
+    }
+
   // 🟢 THIS WAS THE MISSING CATCH BLOCK:
   } catch (e) {
+    // 🟢 NEW: Also hide it if it fails, so they aren't trapped on the loading screen forever
+    if (!initialLoadComplete) {
+        initialLoadComplete = true;
+        window.hideGlobalLoader();
+    }
+    
     if(!quiet) showErr("Server says: " + e.message);
     setStatus('error', 'Auth Failed');
   }
 }
-
 
 function parseTimeToUnix(timeStr) {
     const [time, period] = timeStr.split(' ');
@@ -1664,16 +1743,16 @@ window.initTerminal = async function() {
   window.currentFirebaseToken = null; 
 
   // The Gatekeeper: Wait for Firebase to check the user's status
-  onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // 1. Get the secure token directly from the user object
       window.currentFirebaseToken = await user.getIdToken();
-      
-      // 2. NOW it is safe to boot up the terminal and fetch data
       if (typeof window.initTerminal === 'function') {
           window.initTerminal();
       }
     } else {
+      // 🟢 NEW: Hide the loader immediately if they are being kicked out
+      if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader();
+      
       // 3. Kick unauthenticated users back to the landing page
       window.location.href = "/";
     }
