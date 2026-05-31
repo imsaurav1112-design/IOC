@@ -1640,11 +1640,12 @@ const parseTime = (t) => {
             ctx.stroke();
             ctx.setLineDash([]);
             
-            if (currentHoverY < MAIN_CHART_BOTTOM) {
+if (currentHoverY < MAIN_CHART_BOTTOM) {
                 const hoverPrice = minPrice + ((MAIN_CHART_BOTTOM - 20 - currentHoverY + offsetY) / priceScale) * TICK_SIZE;
-                ctx.fillStyle = 'var(--accent)';
+                // 🟢 FIX: Explicit hex colors instead of CSS variables so the Canvas doesn't draw it black!
+                ctx.fillStyle = isLight ? '#2563eb' : '#3b82f6'; 
                 ctx.fillRect(width - Y_AXIS_WIDTH, currentHoverY - 10, Y_AXIS_WIDTH, 20);
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'left';
                 ctx.fillText(Math.round(hoverPrice), width - Y_AXIS_WIDTH + 8, currentHoverY);
             }
