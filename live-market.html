@@ -799,11 +799,12 @@ footer { height: 48px; background: var(--card); border-top: 1px solid var(--bord
     <input type="range" id="replay-slider" min="0" max="0" value="0" oninput="scrubReplay(this.value)">
     <span id="replay-time-display">--:--</span>
 
-  <select id="replay-speed" onchange="changeReplaySpeed()" style="background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-size: 11px; padding: 4px; outline: none; cursor: pointer;">
-        <option value="1000">1x</option>
-        <option value="500">2x</option>
-        <option value="200">5x</option>
-        <option value="50">20x</option>
+  <!-- 🟢 FIXED: PLAYBACK SPEED CONTROLLER (Dark Theme Friendly) -->
+    <select id="replay-speed" onchange="changeReplaySpeed()" style="background: var(--section); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 12px; font-weight: 600; padding: 4px 8px; outline: none; cursor: pointer; font-family: 'Inter', sans-serif;">
+        <option value="1000" style="background: var(--card); color: var(--text);">1x Speed</option>
+        <option value="500" style="background: var(--card); color: var(--text);">2x Speed</option>
+        <option value="200" style="background: var(--card); color: var(--text);">5x Speed</option>
+        <option value="50" style="background: var(--card); color: var(--text);">20x Speed</option>
     </select>
                 
     <button class="draw-btn" onclick="exitReplayMode()" style="color: var(--green); font-weight: 700; font-size: 12px; font-family: 'Inter';">• LIVE</button>
