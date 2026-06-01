@@ -2179,15 +2179,35 @@ window.initTerminal = async function() {
 // ==========================================
 // 🟢 INTRADAY RAM REPLAY ENGINE
 // ==========================================
+
+// 🟢 NEW: Time conversion helper to fix chronological sorting
+function parseTimeToMinutes(tStr) {
+    if (!tStr) return 0;
+    let timePart = tStr, ampm = "";
+    if (tStr.includes(" ")) {
+        let parts = tStr.split(" ");
+        timePart = parts[0];
+        ampm = parts[1] ? parts[1].toUpperCase() : "";
+    }
+    let [h, m] = timePart.split(":").map(Number);
+    if (ampm === "PM" && h !== 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
+
 let isReplaying = false;
 let replayTimer = null;
-let currentReplaySpeed = 1000; // Default: 1 frame per second
+let currentReplaySpeed = 1000; 
 
 function startIntradayReplay() {
     if (liveHistory.length === 0) {
         alert("Not enough data recorded yet. Let the live market run for a minute first!");
         return;
     }
+
+    // 🟢 THE FIX: Force the RAM array to sort by actual chronological time!
+    liveHistory.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+
     isReplaying = true;
     document.getElementById('intraday-replay-bar').style.display = 'flex';
     
